@@ -30,6 +30,7 @@ class GPIO:
     # nur der Inhalt wurde geändert
     def __init__(self):
         self.mode = None
+        self.channels = {}
 
     def add_event_callback(self):
         """Add a callback for an event already defined using add_event_detect()
@@ -50,7 +51,9 @@ class GPIO:
             pullup/pulldown and no event detection
         [channel] - individual channel or list/tuple of channels to clean up.
         Default - clean every channel that has been used. """
-        raise NotImplementedError
+        print("cleaned up")
+        self.channels = {}
+        self.mode = None
 
     def event_detect(self):
         """Returns True if an edge has occurred on a given GPIO.
@@ -68,16 +71,19 @@ class GPIO:
         channel - either board pin number or BCM number depending on which mode is set."""
         raise NotImplementedError
 
-    def input(self):
+    def input(self, pin):
         """Input from a GPIO channel.  Returns HIGH=1=True or LOW=0=False
         channel - either board pin number or BCM number depending on which mode is set."""
-        raise NotImplementedError
+        return True
 
-    def output(self):
+    def output(self, channel, value):
         """Output to a GPIO channel or list of channels
         channel - either board pin number or BCM number depending on which mode is set.
         value   - 0/1 or False/True or LOW/HIGH"""
-        raise NotImplementedError
+        if self.channels.get(channel) is not None:
+            print(f"set channel {channel} to {value}")
+        else:
+            raise RuntimeError("The GPIO channel has not been set up as an OUTPUT")
 
     def remove_event_detect(self):
         """Remove edge detection for a particular GPIO channel
@@ -90,19 +96,24 @@ class GPIO:
         BOARD - Use Raspberry Pi board numbers
         BCM   - Use Broadcom GPIO 00..nn numbers
         """
-        if mode == GPIO.BCM or mode == GPIO.BOARD:
+        if mode in [GPIO.BCM, GPIO.BOARD]:
             self.mode = mode
             print(f"Modus auf {mode} gesetzt")
         else:
             raise ValueError("An invalid mode was passed to setmode()")
 
-    def setup(self):
+    def setup(self, channel: int, direction: int):
         """Set up a GPIO channel or list of channels with a direction and (optional) pull/up down control
         channel        - either board pin number or BCM number depending on which mode is set.
         direction      - IN or OUT
         [pull_up_down] - PUD_OFF (default), PUD_UP or PUD_DOWN
         [initial]      - Initial value for an output channel"""
-        raise NotImplementedError
+        if self.mode is None:
+            raise RuntimeError("Please set pin numbering mode using GPIO.setmode(GPIO.BOARD) or GPIO.setmode(GPIO.BCM)")
+        if direction not in [GPIO.OUT, GPIO.IN]:
+            raise ValueError("An invalid direction was passed to setup()")
+        self.channels[channel] = 0
+        print(f"setup {channel} to {direction}")
 
     def setwarnings(self):
         """Enable or disable warning messages"""

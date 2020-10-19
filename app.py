@@ -1,5 +1,6 @@
 from flask import Flask, render_template
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, send
+import json
 
 try:
     from RPi import GPIO
@@ -15,30 +16,64 @@ except ModuleNotFoundError:
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
+inputPins = []
+connected = 0
 
 
-@app.route('/test')
-def hello_world():
-    return """<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
-<script type="text/javascript" charset="utf-8">
-    var socket = io();
-    socket.on('connect', function() {
-        socket.emit('message', {data: 'I\'m connected!'});
-    });
-</script>"""
+def check_json(inp, *args):
+    for arg in args:
+        if arg not in inp:
+            send({'error', f'missing argument: {arg}'})
+            return False
+    return True
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@socketio.on('message')
-def handle_message(msg):
-    print(f"recv msg: {msg}")
+
+@socketio.on('setmode')
+def handle_setmode(data):
+    if check_json(data, "mode"):
+        if (mode := int(data["mode"])) in [GPIO.BOARD, GPIO.BCM]:
+            GPIO.setmode(mode)
+
+
+@socketio.on('setup')
+def handle_setup(data):
+    if check_json(data, "pin", "direction"):
+        direction = data["direction"]
+        if direction not in [GPIO.IN, GPIO.OUT]:
+            send({'error', 'invalid direction'})
+        else:
+            GPIO.setup(data["pin"], direction)
+
+
+@socketio.on('output')
+def handle_output(data):
+    if check_json(data, "pin", "status"):
+        GPIO.output(data["pin"], data["status"] != 0)
+
+
+@socketio.on('read')
+def handle_read(json):
+    if check_json(json["pin"]):
+        send({'success', bool(GPIO.input(pin))})
 
 
 @socketio.on('connect')
 def handle_connect():
-    print("client connected")
+    global connected
+    connected += 1
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    global connected
+    connected -= 1
+    if connected <= 0:
+        GPIO.cleanup()
 
 
 if __name__ == '__main__':
