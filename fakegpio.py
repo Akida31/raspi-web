@@ -84,13 +84,17 @@ class GPIO:
         channel - either board pin number or BCM number depending on which mode is set."""
         raise NotImplementedError
 
-    def setmode(self):
+    def setmode(self, mode):
         """
         Set up numbering mode to use for channels.
         BOARD - Use Raspberry Pi board numbers
         BCM   - Use Broadcom GPIO 00..nn numbers
         """
-        raise NotImplementedError
+        if mode == GPIO.BCM or mode == GPIO.BOARD:
+            self.mode = mode
+            print(f"Modus auf {mode} gesetzt")
+        else:
+            raise ValueError("An invalid mode was passed to setmode()")
 
     def setup(self):
         """Set up a GPIO channel or list of channels with a direction and (optional) pull/up down control
