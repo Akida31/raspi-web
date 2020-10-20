@@ -1,6 +1,5 @@
 from flask import Flask, render_template
-from flask_socketio import SocketIO, send
-import json
+from flask_socketio import SocketIO, send, emit
 
 try:
     from RPi import GPIO
@@ -16,14 +15,14 @@ except ModuleNotFoundError:
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
-inputPins = []
+config = {'mode': None, 'pins': {}}
 connected = 0
 
 
 def check_json(inp, *args):
     for arg in args:
         if arg not in inp:
-            send({'error', f'missing argument: {arg}'})
+            send({'error', f'missing argument: {arg}'}, json=True)
             return False
     return True
 
@@ -35,31 +34,62 @@ def index():
 
 @socketio.on('setmode')
 def handle_setmode(data):
+    global config
     if check_json(data, "mode"):
         if (mode := int(data["mode"])) in [GPIO.BOARD, GPIO.BCM]:
             GPIO.setmode(mode)
+            config['mode'] = mode
+            socketio.emit('setmode', data)
 
 
 @socketio.on('setup')
 def handle_setup(data):
+    global config
     if check_json(data, "pin", "direction"):
         direction = data["direction"]
+        pin = data["pin"]
         if direction not in [GPIO.IN, GPIO.OUT]:
-            send({'error', 'invalid direction'})
+            send({'error', 'invalid direction'}, json=True)
         else:
-            GPIO.setup(data["pin"], direction)
+            GPIO.setup(pin, direction)
+            config['pins'][pin] = {'direction': direction, 'status': GPIO.LOW}
+            socketio.emit('setup', data)
+        if direction == GPIO.IN:
+            GPIO.add_event_detect(pin, GPIO.RISING, callback=handle_rising)
+            GPIO.add_event_detect(pin, GPIO.FALLING, callback=handle_falling)
 
 
 @socketio.on('output')
 def handle_output(data):
+    global config
     if check_json(data, "pin", "status"):
-        GPIO.output(data["pin"], data["status"] != 0)
+        pin = data["pin"]
+        status = data["status"] != GPIO.LOW
+        if (pin_config := config['pins'].get(pin)) and pin_config['direction'] == GPIO.OUT:
+            GPIO.output(pin, status)
+            pin_config['status'] = status
+            socketio.emit('output', data)
+        else:
+            send({'error': 'The GPIO channel has not been set up as an OUTPUT'}, json=True)
 
 
-@socketio.on('read')
-def handle_read(json):
-    if check_json(json["pin"]):
-        send({'success', bool(GPIO.input(pin))})
+def handle_input(pin, status):
+    global config
+    socketio.emit('input', {'pin': pin, 'status': 0})
+    config["pins"][pin]['status'] = status
+
+
+def handle_rising(pin):
+    handle_input(pin, 1)
+
+
+def handle_falling(pin):
+    handle_input(pin, 0)
+
+
+@socketio.on('get_all')
+def handle_get():
+    emit('get_all', config)
 
 
 @socketio.on('connect')
