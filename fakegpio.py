@@ -74,14 +74,14 @@ class GPIO:
     def input(self, pin):
         """Input from a GPIO channel.  Returns HIGH=1=True or LOW=0=False
         channel - either board pin number or BCM number depending on which mode is set."""
-        return True
+        return GPIO.HIGH
 
     def output(self, channel, value):
         """Output to a GPIO channel or list of channels
         channel - either board pin number or BCM number depending on which mode is set.
         value   - 0/1 or False/True or LOW/HIGH"""
         if self.channels.get(channel) is not None:
-            print(f"set channel {channel} to {value}")
+            print(f"set output of channel {channel} to {value}")
         else:
             raise RuntimeError("The GPIO channel has not been set up as an OUTPUT")
 

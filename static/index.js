@@ -24,12 +24,28 @@ socket.on('getmode', function (data) {
 })
 
 socket.on('setmode', function (data) {
-    document.getElementById("modus").innerHTML = `Modus: ${data['mode']}`
+    let modus;
+    if (data['mode'] === '11') {
+        modus = 'BCM';
+    }
+    else {
+        modus = 'BOARD';
+    }
+    document.getElementById("modus").innerHTML = `Modus: ${modus}`
     renderPins();
 })
 
 socket.on('setup', function (data) {
     renderPin(data["pin"], data["direction"], data["status"]);
+})
+
+socket.on('output', function (data) {
+    renderPin(data["pin"], OUT, data["status"]);
+})
+
+socket.on('input', function (data) {
+    console.log("input", data);
+    renderPin(data["pin"], IN, data["status"]);
 })
 
 function renderPin(pin, richtung, status) {
@@ -42,7 +58,13 @@ function renderPin(pin, richtung, status) {
     }
     else {
         andereRichtung = IN;
-        let andererStatus = !status;
+        let andererStatus;
+        if (status === 0) {
+            andererStatus = 1;
+        }
+        else {
+            andererStatus = 0;
+        }
         text2 = `<button onclick="wechselStatus(${pin}, ${andererStatus})">${status}</button>`;
     }
     text += `<button onclick="wechselRichtung(${pin}, ${andereRichtung})">${richtung}</button>`;
@@ -64,7 +86,7 @@ function wechselModus(modus) {
 
 function renderPins() {
     let container = document.getElementById('pins');
-    for (let pin=1; pin < 10; pin++) {
+    for (let pin=1; pin < 20; pin++) {
         container.innerHTML += `<div id="pin${pin}">
             <p>Pin ${pin}</p>
             <button onclick="wechselRichtung(${pin}, ${IN})">input</button>

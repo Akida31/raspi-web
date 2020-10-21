@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from flask_socketio import SocketIO, send, emit
+from flask_socketio import SocketIO, emit
 
 try:
     from RPi import GPIO
@@ -29,6 +29,7 @@ def check_json(inp, *args):
 
 def check_input(inp, *args):
     print(config)
+    print(inp)
     if config["mode"]:
         return check_json(inp, *args)
     else:
@@ -49,6 +50,8 @@ def handle_setmode(data):
             GPIO.setmode(mode)
             config['mode'] = mode
             socketio.emit('setmode', data)
+        else:
+            emit('fehler', {'text': 'Ungültiger modus'})
 
 
 @socketio.on('getmode')
@@ -65,14 +68,16 @@ def handle_setup(data):
         pin = data["pin"]
         if direction not in [GPIO.IN, GPIO.OUT]:
             emit('fehler', {'text': 'Ungültige Richtung'})
-        else:
-            GPIO.setup(pin, direction)
-            status = GPIO.input(pin)
-            config['pins'][pin] = {'direction': direction, 'status': GPIO.LOW}
-            socketio.emit('setup', {'pin': pin, 'direction': direction, 'status': status})
+            return
+        GPIO.setup(pin, direction)
+        if pin in config['pins'] and config['pins'][pin]['direction'] == GPIO.IN:
+            GPIO.remove_event_detect(pin)
         if direction == GPIO.IN:
-            GPIO.add_event_detect(pin, GPIO.RISING, callback=handle_rising)
-            GPIO.add_event_detect(pin, GPIO.FALLING, callback=handle_falling)
+            GPIO.add_event_detect(pin, GPIO.BOTH, callback=handle_input)
+            print("added callback for", pin)
+        status = GPIO.input(pin)
+        config['pins'][pin] = {'direction': direction, 'status': status}
+        socketio.emit('setup', {'pin': pin, 'direction': direction, 'status': status})
 
 
 @socketio.on('output')
@@ -80,27 +85,22 @@ def handle_output(data):
     global config
     if check_input(data, "pin", "status"):
         pin = data["pin"]
-        status = data["status"] != GPIO.LOW
+        status = data["status"]
         if (pin_config := config['pins'].get(pin)) and pin_config['direction'] == GPIO.OUT:
             GPIO.output(pin, status)
             pin_config['status'] = status
+            print(f"output, {data}")
             socketio.emit('output', data)
         else:
             emit('fehler', {'text': 'Der GPIO Pin wurde nicht als Ausgang gewählt'})
 
 
-def handle_input(pin, status):
+def handle_input(pin):
     global config
-    socketio.emit('input', {'pin': pin, 'status': 0})
+    status = GPIO.input(pin)
+    print(f"input on pin {pin} with status {status}")
+    socketio.emit('input', {'pin': pin, 'status': status})
     config["pins"][pin]['status'] = status
-
-
-def handle_rising(pin):
-    handle_input(pin, 1)
-
-
-def handle_falling(pin):
-    handle_input(pin, 0)
 
 
 @socketio.on('get_all')
@@ -118,11 +118,12 @@ def handle_connect():
 def handle_disconnect():
     global connected
     connected -= 1
-    if connected <= 0:
+    if connected <= 0 and len(config["pins"]) > 0:
         GPIO.cleanup()
 
 
 if __name__ == '__main__':
     import logging
+
     logging.getLogger('werkzeug').disabled = True
     socketio.run(app, host='0.0.0.0', )
