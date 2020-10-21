@@ -22,9 +22,18 @@ connected = 0
 def check_json(inp, *args):
     for arg in args:
         if arg not in inp:
-            send({'error', f'missing argument: {arg}'}, json=True)
+            emit('fehler', {'text': f'Fehlendes Argumend: {arg}'})
             return False
     return True
+
+
+def check_input(inp, *args):
+    print(config)
+    if config["mode"]:
+        return check_json(inp, *args)
+    else:
+        emit('fehler', {'text': 'Setze zuerst den Modus'})
+        return False
 
 
 @app.route('/')
@@ -42,18 +51,26 @@ def handle_setmode(data):
             socketio.emit('setmode', data)
 
 
+@socketio.on('getmode')
+def handle_getmode(_data):
+    mode = GPIO.getmode()
+    print(f"getmode: {mode}")
+    emit('getmode', {"mode": mode})
+
+
 @socketio.on('setup')
 def handle_setup(data):
     global config
-    if check_json(data, "pin", "direction"):
+    if check_input(data, "pin", "direction"):
         direction = data["direction"]
         pin = data["pin"]
         if direction not in [GPIO.IN, GPIO.OUT]:
-            send({'error', 'invalid direction'}, json=True)
+            emit('fehler', {'text': 'Ungültige Richtung'})
         else:
             GPIO.setup(pin, direction)
+            status = GPIO.input(pin)
             config['pins'][pin] = {'direction': direction, 'status': GPIO.LOW}
-            socketio.emit('setup', data)
+            socketio.emit('setup', {'pin': pin, 'direction': direction, 'status': status})
         if direction == GPIO.IN:
             GPIO.add_event_detect(pin, GPIO.RISING, callback=handle_rising)
             GPIO.add_event_detect(pin, GPIO.FALLING, callback=handle_falling)
@@ -62,7 +79,7 @@ def handle_setup(data):
 @socketio.on('output')
 def handle_output(data):
     global config
-    if check_json(data, "pin", "status"):
+    if check_input(data, "pin", "status"):
         pin = data["pin"]
         status = data["status"] != GPIO.LOW
         if (pin_config := config['pins'].get(pin)) and pin_config['direction'] == GPIO.OUT:
@@ -70,7 +87,7 @@ def handle_output(data):
             pin_config['status'] = status
             socketio.emit('output', data)
         else:
-            send({'error': 'The GPIO channel has not been set up as an OUTPUT'}, json=True)
+            emit('fehler', {'text': 'Der GPIO Pin wurde nicht als Ausgang gewählt'})
 
 
 def handle_input(pin, status):
@@ -107,4 +124,6 @@ def handle_disconnect():
 
 
 if __name__ == '__main__':
-    socketio.run(app)
+    import logging
+    logging.getLogger('werkzeug').disabled = True
+    socketio.run(app, host='0.0.0.0', )

@@ -113,7 +113,7 @@ class GPIO:
         if direction not in [GPIO.OUT, GPIO.IN]:
             raise ValueError("An invalid direction was passed to setup()")
         self.channels[channel] = 0
-        print(f"setup {channel} to {direction}")
+        print(f"setup pin {channel} to direction {direction}")
 
     def setwarnings(self, on):
         """Enable or disable warning messages"""
