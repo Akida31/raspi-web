@@ -14,14 +14,18 @@ socket.on('fehler', function (data) {
 socket.on('getmode', function (data) {
     let mode = data["mode"];
     if (mode === null) {
-        mode = BCM;
-        wechselModus('BCM');
+        document.getElementById("modus").innerHTML = `<p>Welcher Modus soll genutzt werden?</p>
+        <button onclick="wechselModus('${BCM}');">BCM</button>
+        <button onclick="wechselModus('${BOARD}');">BOARD</button>`;
     }
-    renderModus(mode);
+    else {
+        renderPins();
+    }
 })
 
 socket.on('setmode', function (data) {
-    renderModus(data["mode"]);
+    document.getElementById("modus").innerHTML = `Modus: ${data['mode']}`
+    renderPins();
 })
 
 socket.on('setup', function (data) {
@@ -46,20 +50,6 @@ function renderPin(pin, richtung, status) {
     document.getElementById(`pin${pin}`).innerHTML = text;
 }
 
-
-function renderModus(modus) {
-    let modus1, modus2;
-    if (modus === BCM) {
-        modus1 = 'BCM';
-        modus2 = 'BOARD';
-    } else {
-        modus1 = 'BOARD';
-        modus2 = 'BCM';
-    }
-    document.getElementById("modus").innerHTML = `<p>Modus: ${modus1}</p>
-        <button onclick="wechselModus('${modus2}');">Wechsel zu Modus ${modus2}</button>`;
-}
-
 function wechselRichtung(pin, richtung) {
     socket.emit('setup', {pin: pin, direction: richtung});
 }
@@ -69,18 +59,10 @@ function wechselStatus(pin, status) {
 }
 
 function wechselModus(modus) {
-    let modusNummer;
-    if (modus === 'BCM') {
-        modusNummer = BCM;
-    }
-    else {
-        modusNummer = BOARD;
-    }
-    socket.emit('setmode', {mode: modusNummer});
+    socket.emit('setmode', {mode: modus});
 }
 
-function render() {
-    socket.emit('getmode', {});
+function renderPins() {
     let container = document.getElementById('pins');
     for (let pin=1; pin < 10; pin++) {
         container.innerHTML += `<div id="pin${pin}">
@@ -91,4 +73,4 @@ function render() {
     }
 }
 
-render();
+socket.emit('getmode', {});

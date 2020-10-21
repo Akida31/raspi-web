@@ -54,7 +54,6 @@ def handle_setmode(data):
 @socketio.on('getmode')
 def handle_getmode(_data):
     mode = GPIO.getmode()
-    print(f"getmode: {mode}")
     emit('getmode', {"mode": mode})
 
 
