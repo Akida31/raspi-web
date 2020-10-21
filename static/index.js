@@ -6,14 +6,14 @@ const BCM = 11;
 const BOARD = 10;
 
 
-socket.on('fehler', function (data) {
-    console.log(data);
-    alert(data);
+socket.on('fehler', function (daten) {
+    alert(daten["text"]);
 })
 
-socket.on('getmode', function (data) {
-    let mode = data["mode"];
-    if (mode === null) {
+// TODO multi client connection
+socket.on('getmode', function (daten) {
+    let modus = daten["modus"];
+    if (modus === null) {
         document.getElementById("modus").innerHTML = `<p>Welcher Modus soll genutzt werden?</p>
         <button onclick="wechselModus('${BCM}');">BCM</button>
         <button onclick="wechselModus('${BOARD}');">BOARD</button>`;
@@ -23,9 +23,9 @@ socket.on('getmode', function (data) {
     }
 })
 
-socket.on('setmode', function (data) {
+socket.on('setmode', function (daten) {
     let modus;
-    if (data['mode'] === '11') {
+    if (daten['modus'] === '11') {
         modus = 'BCM';
     }
     else {
@@ -35,17 +35,16 @@ socket.on('setmode', function (data) {
     renderPins();
 })
 
-socket.on('setup', function (data) {
-    renderPin(data["pin"], data["direction"], data["status"]);
+socket.on('setup', function (daten) {
+    renderPin(daten["pin"], daten["richtung"], daten["status"]);
 })
 
-socket.on('output', function (data) {
-    renderPin(data["pin"], OUT, data["status"]);
+socket.on('output', function (daten) {
+    renderPin(daten["pin"], OUT, daten["status"]);
 })
 
-socket.on('input', function (data) {
-    console.log("input", data);
-    renderPin(data["pin"], IN, data["status"]);
+socket.on('input', function (daten) {
+    renderPin(daten["pin"], IN, daten["status"]);
 })
 
 function renderPin(pin, richtung, status) {
@@ -73,7 +72,7 @@ function renderPin(pin, richtung, status) {
 }
 
 function wechselRichtung(pin, richtung) {
-    socket.emit('setup', {pin: pin, direction: richtung});
+    socket.emit('setup', {pin: pin, richtung: richtung});
 }
 
 function wechselStatus(pin, status) {
@@ -81,7 +80,7 @@ function wechselStatus(pin, status) {
 }
 
 function wechselModus(modus) {
-    socket.emit('setmode', {mode: modus});
+    socket.emit('setmode', {modus: modus});
 }
 
 function renderPins() {
@@ -89,8 +88,8 @@ function renderPins() {
     for (let pin=1; pin < 20; pin++) {
         container.innerHTML += `<div id="pin${pin}">
             <p>Pin ${pin}</p>
-            <button onclick="wechselRichtung(${pin}, ${IN})">input</button>
-            <button onclick="wechselRichtung(${pin}, ${OUT})">output</button>
+            <button onclick="wechselRichtung(${pin}, ${IN})">Eingang</button>
+            <button onclick="wechselRichtung(${pin}, ${OUT})">Ausgang</button>
         </div>`;
     }
 }
