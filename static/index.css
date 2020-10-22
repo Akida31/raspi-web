@@ -5,9 +5,9 @@ body {
 #modus {
     font-size: 1.5rem;
     height: 2rem;
-    width: 30%;
+    margin: auto;
+    width: 40rem;
     position: relative;
-    left: 35%;
     text-align: center;
 }
 
@@ -130,7 +130,7 @@ body {
 
 #neuer-pin {
     position: fixed;
-    bottom: 0.5rem;
+    bottom: 2vh;
     width: 40vw;
     left: 30vw;
     height: 2rem;
