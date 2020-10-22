@@ -6,11 +6,19 @@
     <meta content="" name="description">
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <link rel="stylesheet" href="static/index.css">
 </head>
 
 <body>
-<div id="modus"></div>
-<div id="pins"></div>
-<script src="static/index.js"></script>
+    <div id="modus">
+
+    </div>
+    <div id="pins"></div>
+    <div id="neuer-pin" style="display: none">
+        <p>Neuen Pin hinzufügen: </p>
+        <input id="pin-nummer" type="number" value="1" />
+        <img src="static/plus-circle.svg" alt="hinzufügen" onclick="pinHinzufuegen()">
+    </div>
+    <script src="static/index.js"></script>
 </body>
 </html>

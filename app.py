@@ -95,7 +95,6 @@ def handle_setup(daten):
             GPIO.remove_event_detect(pin)
         if richtung == GPIO.IN:
             GPIO.add_event_detect(pin, GPIO.BOTH, callback=handle_input)
-            print("added callback for", pin)
         status = GPIO.input(pin)
         konfiguration["pins"][pin] = {"richtung": richtung, "status": status}
         socketio.emit("setup", {"pin": pin, "richtung": richtung, "status": status})
@@ -123,7 +122,7 @@ def handle_input(pin):
 
 
 @socketio.on("get_all")
-def handle_get():
+def handle_get(_daten):
     emit("get_all", konfiguration)
 
 

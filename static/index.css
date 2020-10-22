@@ -1,0 +1,169 @@
+body {
+    font-size: 1rem;
+}
+
+#modus {
+    font-size: 1.5rem;
+    height: 2rem;
+    width: 30%;
+    position: relative;
+    left: 35%;
+    text-align: center;
+}
+
+#modus p {
+    margin: 0.5rem;
+    height: 2rem;
+    border-radius: 1rem;
+    background-color: #cdcdcd;
+}
+
+#pins {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+@media only screen and (max-width: 1000px) {
+    #pins {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pin {
+    align-items: center;
+    position: relative;
+    margin: 0.5rem;
+    padding: 0.5rem 1vw 0.5rem 1vw;
+    display: flex;
+    background-color: #cdcdcd;
+    border-radius: 0.8rem;
+    border-width: 0;
+}
+
+.pin-text{
+    width: 3.5rem;
+}
+
+.image {
+    height: 18px;
+    width: 18px;
+}
+
+
+.status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15rem;
+    position: absolute;
+    left: 7.5vw;
+}
+
+.status-input {
+    position: relative;
+    padding-left: 0.5rem;
+    left: 1rem;
+}
+
+.status-image {
+    height: 2.5rem;
+    width: 2.5rem;
+}
+
+.status-button {
+    background-color: #fff;
+    border-radius: 5rem;
+    border-width: 0.2rem;
+    border-color: #aaa;
+    padding: 0.1rem;
+    border-style: solid;
+    position: relative;
+    left: 1rem;
+}
+
+.status-button:hover {
+    cursor: pointer;
+    border-color: #888;
+    background-color: #ffffdd;
+}
+
+
+.input-button {
+    height: 2.5rem;
+    position: absolute;
+    right: 8rem;
+    width: 6rem;
+    background-color: #48AA4A;
+    border-radius: 0.5rem;
+    border-width: 0;
+}
+
+.input-button:hover {
+    cursor: pointer;
+    background-color: #3cdf40;
+}
+
+.output-button {
+    height: 2.5rem;
+    position: absolute;
+    right: 0.5rem;
+    width: 6rem;
+    background-color: #2088E5;
+    border-radius: 0.5rem;
+    border-width: 0;
+}
+
+.output-button:hover {
+    cursor: pointer;
+    background-color: #00c0ff;
+}
+
+.button-disabled {
+    background-color: #888888;
+    color: #000000;
+}
+
+.button-disabled:hover {
+    background-color: #888888;
+    cursor: unset;
+}
+
+#neuer-pin {
+    position: fixed;
+    bottom: 0.5rem;
+    width: 40vw;
+    left: 30vw;
+    height: 2rem;
+    align-items: center;
+    margin: 0.5rem;
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    background-color: #aaaaaa;
+    border-radius: 0.8rem;
+    border-width: 0;
+    justify-content: center;
+}
+
+
+#neuer-pin button:hover {
+    cursor: pointer;
+    background-color: #cdcdcd;
+}
+
+#neuer-pin input {
+    margin-left: 0.5rem;
+    width: 3rem;
+}
+
+#neuer-pin img {
+    position: relative;
+    margin-left: 1rem;
+    padding: 0.5rem;
+    width: 1.6rem;
+    height: auto;
+}
+
+#neuer-pin img:hover {
+    margin-left: 0.6rem;
+    width: 2rem;
+    height: auto;
+}
