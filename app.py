@@ -48,7 +48,7 @@ def teste_eingabe(eingabe, *argumente):
     if konfiguration["modus"]:
         for argument in argumente:
             if argument not in eingabe:
-                emit("fehler", {"text": f"Fehlendes Argumend: '{argument}'"})
+                emit("fehler", {"text": f"Fehlendes Argument: '{argument}'"})
                 return False
         return True
     else:
@@ -56,9 +56,55 @@ def teste_eingabe(eingabe, *argumente):
         return False
 
 
+def handle_input(pin):
+    global konfiguration
+    status = GPIO.input(pin)
+    socketio.emit("input", {"pin": pin, "status": status})
+    konfiguration["pins"][pin]["status"] = status
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@socketio.on("connect")
+def handle_connect():
+    global verbundene_benutzer
+    verbundene_benutzer += 1
+
+
+@socketio.on("disconnect")
+def handle_disconnect():
+    global verbundene_benutzer
+    verbundene_benutzer -= 1
+    if verbundene_benutzer <= 0 and len(konfiguration["pins"]) > 0:
+        GPIO.cleanup()
+
+
+@socketio.on("get_all")
+def handle_get(_daten):
+    emit("get_all", konfiguration)
+
+
+@socketio.on("getmode")
+def handle_getmode(_daten):
+    modus = GPIO.getmode()
+    emit("getmode", {"modus": modus})
+
+
+@socketio.on("output")
+def handle_output(data):
+    global konfiguration
+    if teste_eingabe(data, "pin", "status"):
+        pin = data["pin"]
+        status = data["status"]
+        if (pin_konfiguration := konfiguration["pins"].get(pin)) and pin_konfiguration["richtung"] == GPIO.OUT:
+            GPIO.output(pin, status)
+            pin_konfiguration["status"] = status
+            socketio.emit("output", data)
+        else:
+            emit("fehler", {"text": "Der GPIO Pin wurde nicht als Ausgang gewählt"})
 
 
 @socketio.on("setmode")
@@ -70,15 +116,9 @@ def handle_setmode(daten):
             konfiguration["modus"] = modus
             socketio.emit("setmode", daten)
         else:
-            emit("fehler", {"text": "Ungültiger modus"})
+            emit("fehler", {"text": "Ungültiger Modus"})
     else:
-        emit("fehler", {"text": f"Fehlendes Argumend: 'modus'"})
-
-
-@socketio.on("getmode")
-def handle_getmode(_daten):
-    modus = GPIO.getmode()
-    emit("getmode", {"modus": modus})
+        emit("fehler", {"text": f"Fehlendes Argument: 'modus'"})
 
 
 @socketio.on("setup")
@@ -98,46 +138,6 @@ def handle_setup(daten):
         status = GPIO.input(pin)
         konfiguration["pins"][pin] = {"richtung": richtung, "status": status}
         socketio.emit("setup", {"pin": pin, "richtung": richtung, "status": status})
-
-
-@socketio.on("output")
-def handle_output(data):
-    global konfiguration
-    if teste_eingabe(data, "pin", "status"):
-        pin = data["pin"]
-        status = data["status"]
-        if (pin_konfiguration := konfiguration["pins"].get(pin)) and pin_konfiguration["richtung"] == GPIO.OUT:
-            GPIO.output(pin, status)
-            pin_konfiguration["status"] = status
-            socketio.emit("output", data)
-        else:
-            emit("fehler", {"text": "Der GPIO Pin wurde nicht als Ausgang gewählt"})
-
-
-def handle_input(pin):
-    global konfiguration
-    status = GPIO.input(pin)
-    socketio.emit("input", {"pin": pin, "status": status})
-    konfiguration["pins"][pin]["status"] = status
-
-
-@socketio.on("get_all")
-def handle_get(_daten):
-    emit("get_all", konfiguration)
-
-
-@socketio.on("connect")
-def handle_connect():
-    global verbundene_benutzer
-    verbundene_benutzer += 1
-
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    global verbundene_benutzer
-    verbundene_benutzer -= 1
-    if verbundene_benutzer <= 0 and len(konfiguration["pins"]) > 0:
-        GPIO.cleanup()
 
 
 if __name__ == "__main__":

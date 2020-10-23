@@ -8,7 +8,15 @@ const BOARD = 10;
 
 socket.on('fehler', function (daten) {
     alert(daten["text"]);
-})
+});
+
+socket.on('get_all', function (daten) {
+    setzeModus(daten["modus"]);
+    let pins = daten['pins'];
+    for (let pin in pins) {
+        renderPin(pin, pins[pin]['richtung'], pins[pin]['status']);
+    }
+});
 
 socket.on('getmode', function (daten) {
     let modus = daten["modus"];
@@ -19,16 +27,25 @@ socket.on('getmode', function (daten) {
     } else {
         socket.emit('get_all', {});
     }
-})
+});
 
-socket.on('get_all', function (daten) {
-    setzeModus(daten["modus"]);
-    console.log("daten", daten);
-    let pins = daten['pins'];
-    for (let pin in pins) {
-        renderPin(pin, pins[pin]['richtung'], pins[pin]['status']);
-    }
-})
+socket.on('input', function (daten) {
+    renderPin(daten["pin"], IN, daten["status"]);
+});
+
+
+socket.on('output', function (daten) {
+    renderPin(daten["pin"], OUT, daten["status"]);
+});
+
+socket.on('setmode', function (daten) {
+    setzeModus(daten['modus']);
+});
+
+socket.on('setup', function (daten) {
+    renderPin(daten["pin"], daten["richtung"], daten["status"]);
+});
+
 
 function setzeModus(modus) {
     if (modus == '11') {
@@ -40,21 +57,38 @@ function setzeModus(modus) {
     document.getElementById('neuer-pin').style.display = 'flex';
 }
 
-socket.on('setmode', function (daten) {
-    setzeModus(daten['modus']);
-})
+function wechselRichtung(pin, richtung) {
+    socket.emit('setup', {pin: pin, richtung: richtung});
+}
 
-socket.on('setup', function (daten) {
-    renderPin(daten["pin"], daten["richtung"], daten["status"]);
-})
+function wechselStatus(pin, status) {
+    socket.emit('output', {pin: pin, status: status});
+}
 
-socket.on('output', function (daten) {
-    renderPin(daten["pin"], OUT, daten["status"]);
-})
+function wechselModus(modus) {
+    socket.emit('setmode', {modus: modus});
+}
 
-socket.on('input', function (daten) {
-    renderPin(daten["pin"], IN, daten["status"]);
-})
+function neuerPin(pin) {
+    let container = document.getElementById('pins');
+    container.innerHTML += `<div id="pin${pin}" class="pin">
+            <p>Pin ${pin}</p>
+            <button class="input-button" onclick="wechselRichtung(${pin}, ${IN})"><img src="static/input.svg" alt=""/> Eingang</button>
+            <button class="output-button" onclick="wechselRichtung(${pin}, ${OUT})"><img src="static/output.svg" alt=""/ class="image">Ausgang</button>
+        </div>`;
+}
+
+function pinHinzufuegen() {
+    let pin = document.getElementById('pin-nummer');
+    let nummer = pin.value;
+    if (document.getElementById(`pin${nummer}`) !== null) {
+        alert("Pin existiert bereits")
+    } else {
+        neuerPin(nummer);
+    }
+    pin.value = 1;
+}
+
 
 function renderPin(pin, richtung, status) {
     if (document.getElementById(`pin${pin}`) === null) {
@@ -84,41 +118,8 @@ function renderPin(pin, richtung, status) {
     text += `<button class="input-button ${buttonInClass}" onclick="wechselRichtung(${pin}, ${IN})" ${buttonInDisable}>
                 <img src="static/input.svg" alt=""/> Eingang</button>
             <button class="output-button ${buttonOutClass}" onclick="wechselRichtung(${pin}, ${OUT})" ${buttonOutDisable}>
-                <img src="static/output.svg" alt=""/ class="image">Ausgang</button>`
+                <img src="static/output.svg" alt=""/ class="image">Ausgang</button>`;
     document.getElementById(`pin${pin}`).innerHTML = text;
-}
-
-function wechselRichtung(pin, richtung) {
-    socket.emit('setup', {pin: pin, richtung: richtung});
-}
-
-function wechselStatus(pin, status) {
-    socket.emit('output', {pin: pin, status: status});
-}
-
-function wechselModus(modus) {
-    socket.emit('setmode', {modus: modus});
-}
-
-function neuerPin(pin) {
-    let container = document.getElementById('pins');
-    container.innerHTML += `<div id="pin${pin}" class="pin">
-            <p>Pin ${pin}</p>
-            <button class="input-button" onclick="wechselRichtung(${pin}, ${IN})"><img src="static/input.svg" alt=""/> Eingang</button>
-            <button class="output-button" onclick="wechselRichtung(${pin}, ${OUT})"><img src="static/output.svg" alt=""/ class="image">Ausgang</button>
-        </div>`;
-}
-
-
-function pinHinzufuegen() {
-    let pin = document.getElementById('pin-nummer');
-    let nummer = pin.value;
-    if (document.getElementById(`pin${nummer}`) !== null) {
-        alert("Pin existiert bereits")
-    } else {
-        neuerPin(nummer);
-    }
-    pin.value = 1;
 }
 
 socket.emit('getmode', {});
