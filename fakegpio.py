@@ -8,6 +8,10 @@
     :license: MIT
 """
 
+from time import sleep
+from threading import Thread
+from random import randint
+
 
 class GPIO:
     # Konstanten sind aus RPi.GPIO übernommen
@@ -39,12 +43,45 @@ class GPIO:
         """
         self.mode = None
         self.channels = {}
+        self.events = []
+
+    def _callback(self, channel, callback):
+        """Funktion, die für den event_callback genutzt wird
+        Sie ruft die gewünschte Funktion nach 5-10 Sekunden auf
+        :param channel: Der channel mit Änderung
+        :param callback: Die Callbackfunktion
+        """
+        sleep(randint(5, 10))
+        if channel in self.events:
+            callback(channel)
+
+    def _check_mode(self):
+        """
+        checkt, ob schon ein mode gesetzt wurde
+        :raises: RuntimeError
+        """
+        if self.mode is None:
+            raise RuntimeError("Please set pin numbering mode using GPIO.setmode(GPIO.BOARD) or GPIO.setmode(GPIO.BCM)")
+
+    def _check_channel_input(self, channel):
+        """
+        checkt, ob der channel als input gesetzt wurde
+        :raises: RuntimeError
+        """
+        if self.channels.get(channel) != GPIO.IN:
+            raise RuntimeError("You must setup() the GPIO channel as an input first")
 
     def add_event_callback(self, channel, callback):
         """Add a callback for an event already defined using add_event_detect()
         channel      - either board pin number or BCM number depending on which mode is set.
         callback     - a callback function"""
+        self._check_mode()
+        self._check_channel_input(channel)
+        if channel not in self.events:
+            raise RuntimeError("Add event detection using add_event_detect first before adding a callback")
         print(f"event callback für channel {channel} hinzugefügt: {callback}")
+        thread = Thread(target=self._callback, args=(channel, callback))
+        thread.start()
 
     def add_event_detect(self, channel, edge, callback=None, bouncetime=None):
         """Enable edge detection events for a particular GPIO channel.
@@ -52,6 +89,8 @@ class GPIO:
         edge         - RISING, FALLING or BOTH
         [callback]   - A callback function for the event (optional)
         [bouncetime] - Switch bounce timeout in ms for callback"""
+        self._check_mode()
+        self._check_channel_input(channel)
         if edge == GPIO.RISING:
             edge = "rising"
         elif edge == GPIO.FALLING:
@@ -59,8 +98,10 @@ class GPIO:
         elif edge == GPIO.BOTH:
             edge = "both"
         else:
-            raise TypeError("edge muss einen der folgenden Werte haben: GPIO.RISING, GPIO.FALLLING, GPIO.BOTH")
-        print(f"event detect für channel {channel} für {edge} mit callback {callback} und bouncetime {bouncetime}ms")
+            raise ValueError("The edge must be set to RISING, FALLING or BOTH")
+        print(f"event detect für channel {channel} für {edge} und bouncetime {bouncetime}ms")
+        if callback:
+            self.add_event_callback(channel, callback)
 
     def cleanup(self, channel=None):
         """Clean up by resetting all GPIO channels that have been used by this program to INPUT with no
@@ -74,15 +115,15 @@ class GPIO:
                 del self.channels[c]
                 print(f"cleanup von channel {c}")
         else:
-            print(f"cleanup")
+            print("cleanup")
             self.channels = {}
 
-    def event_detect(self, channel):
+    def event_detected(self, channel):
         """Returns True if an edge has occurred on a given GPIO.
         You need to enable edge detection using add_event_detect() first.
         channel - either board pin number or BCM number depending on which mode is set."""
-        print(f"event detect für channel {channel}")
-        return True
+        self._check_mode()
+        return bool(randint(0, 1))
 
     def getmode(self):
         """Get numbering mode used for channel numbers.
@@ -92,18 +133,23 @@ class GPIO:
     def gpio_function(self, channel):
         """Return the current GPIO function (IN, OUT, PWM, SERIAL, I2C, SPI)
         channel - either board pin number or BCM number depending on which mode is set."""
-        return self.channels[channel]
+        self._check_mode()
+        return self.channels.get(channel)
 
     def input(self, channel):
         """Input from a GPIO channel.  Returns HIGH=1=True or LOW=0=False
         channel - either board pin number or BCM number depending on which mode is set."""
+        self._check_mode()
+        if channel not in self.channels:
+            raise RuntimeError("You must setup() the GPIO channel first")
         print(f"input für channel {channel}")
-        return GPIO.HIGH
+        return randint(0, 1)
 
     def output(self, channel, value):
         """Output to a GPIO channel or list of channels
         channel - either board pin number or BCM number depending on which mode is set.
         value   - 0/1 or False/True or LOW/HIGH"""
+        self._check_mode()
         if self.channels.get(channel) is not None:
             print(f"output für channel {channel} auf {value} gesetzt")
         else:
@@ -112,6 +158,8 @@ class GPIO:
     def remove_event_detect(self, channel):
         """Remove edge detection for a particular GPIO channel
         channel - either board pin number or BCM number depending on which mode is set."""
+        self._check_mode()
+        self.events.remove(channel)
         print(f"event detect für channel {channel} entfernt")
 
     def setmode(self, mode):
@@ -132,15 +180,14 @@ class GPIO:
         direction      - IN or OUT
         [pull_up_down] - PUD_OFF (default), PUD_UP or PUD_DOWN
         [initial]      - Initial value for an output channel"""
-        if self.mode is None:
-            raise RuntimeError("Please set pin numbering mode using GPIO.setmode(GPIO.BOARD) or GPIO.setmode(GPIO.BCM)")
+        self._check_mode()
         if direction == GPIO.OUT:
             direction = "OUT"
         elif direction == GPIO.IN:
             direction = "IN"
         else:
             raise ValueError("An invalid direction was passed to setup()")
-        self.channels[channel] = 0
+        self.channels[channel] = direction
         print(f"setup channel {channel} auf {direction} mit pull_up_down {pull_up_down} und initial {initial}")
 
     def setwarnings(self, on):
@@ -153,6 +200,8 @@ class GPIO:
         edge         - RISING, FALLING or BOTH
         [bouncetime] - time allowed between calls to allow for switchbounce
         [timeout]    - timeout in ms"""
+        self._check_mode()
+        self._check_channel_input(channel)
         if edge == GPIO.RISING:
             edge = "rising"
         elif edge == GPIO.FALLING:
@@ -160,5 +209,7 @@ class GPIO:
         elif edge == GPIO.BOTH:
             edge = "both"
         else:
-            raise TypeError("edge muss einen der folgenden Werte haben: GPIO.RISING, GPIO.FALLLING, GPIO.BOTH")
+            raise ValueError("The edge must be set to RISING, FALLING or BOTH")
         print(f"wait_for_edge mit channel {channel} edge {edge}, bouncetime {bouncetime} und timeout {timeout}")
+        wartezeit = min(randint(5, 10), timeout/1000)
+        sleep(wartezeit)
