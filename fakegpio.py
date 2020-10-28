@@ -1,8 +1,8 @@
 """
     fakegpio
 
-    Ein Ersatzmodul für nicht RaspberryPis.
-    So können Syntax und einfache Programmlogik überprüft werden.
+    Ein Ersatzmodul fuer nicht RaspberryPis.
+    So koennen Syntax und einfache Programmlogik ueberprueft werden.
 
     :author: Akida31
     :license: MIT
@@ -14,7 +14,7 @@ from random import randint
 
 
 class GPIO:
-    # Konstanten sind aus RPi.GPIO übernommen
+    # Konstanten sind aus RPi.GPIO uebernommen
     BCM = 11
     BOARD = 10
     BOTH = 33
@@ -35,8 +35,8 @@ class GPIO:
     UNKNOWN = - 1
     VERSION = "0.7.0"
 
-    # Methodennamen und Erklärungen sind auch übernommen,
-    # nur der Inhalt wurde geändert
+    # Methodennamen und Erklaerungen sind auch uebernommen,
+    # nur der Inhalt wurde geaendert
     def __init__(self):
         """
         erstelle ein neues Fake-GPIO-Objekt
@@ -46,8 +46,8 @@ class GPIO:
         self.events = []
 
     def _callback(self, channel, callback):
-        """Funktion, die für den event_callback genutzt wird
-        Sie ruft die gewünschte Funktion nach 5-10 Sekunden auf
+        """Funktion, die fuer den event_callback genutzt wird
+        Sie ruft die gewuenschte Funktion nach 5-10 Sekunden auf
         :param channel: Der channel mit Änderung
         :param callback: Die Callbackfunktion
         """
@@ -79,7 +79,7 @@ class GPIO:
         self._check_channel_input(channel)
         if channel not in self.events:
             raise RuntimeError("Add event detection using add_event_detect first before adding a callback")
-        print(f"event callback für channel {channel} hinzugefügt: {callback}")
+        print(f"event callback fuer channel {channel} hinzugefuegt: {callback}")
         thread = Thread(target=self._callback, args=(channel, callback))
         thread.start()
 
@@ -99,7 +99,7 @@ class GPIO:
             edge = "both"
         else:
             raise ValueError("The edge must be set to RISING, FALLING or BOTH")
-        print(f"event detect für channel {channel} für {edge} und bouncetime {bouncetime}ms")
+        print(f"event detect fuer channel {channel} fuer {edge} und bouncetime {bouncetime}ms")
         if callback:
             self.add_event_callback(channel, callback)
 
@@ -142,7 +142,7 @@ class GPIO:
         self._check_mode()
         if channel not in self.channels:
             raise RuntimeError("You must setup() the GPIO channel first")
-        print(f"input für channel {channel}")
+        print(f"input fuer channel {channel}")
         return randint(0, 1)
 
     def output(self, channel, value):
@@ -151,7 +151,7 @@ class GPIO:
         value   - 0/1 or False/True or LOW/HIGH"""
         self._check_mode()
         if self.channels.get(channel) is not None:
-            print(f"output für channel {channel} auf {value} gesetzt")
+            print(f"output fuer channel {channel} auf {value} gesetzt")
         else:
             raise RuntimeError("The GPIO channel has not been set up as an OUTPUT")
 
@@ -160,7 +160,7 @@ class GPIO:
         channel - either board pin number or BCM number depending on which mode is set."""
         self._check_mode()
         self.events.remove(channel)
-        print(f"event detect für channel {channel} entfernt")
+        print(f"event detect fuer channel {channel} entfernt")
 
     def setmode(self, mode):
         """
