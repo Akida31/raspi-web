@@ -150,7 +150,7 @@ class GPIO:
         channel - either board pin number or BCM number depending on which mode is set.
         value   - 0/1 or False/True or LOW/HIGH"""
         self._check_mode()
-        if self.channels.get(channel) is not None:
+        if channel in self.channels:
             print(f"output fuer channel {channel} auf {value} gesetzt")
         else:
             raise RuntimeError("The GPIO channel has not been set up as an OUTPUT")
@@ -211,5 +211,5 @@ class GPIO:
         else:
             raise ValueError("The edge must be set to RISING, FALLING or BOTH")
         print(f"wait_for_edge mit channel {channel} edge {edge}, bouncetime {bouncetime} und timeout {timeout}")
-        wartezeit = min(randint(5, 10), timeout/1000)
+        wartezeit = min(randint(5, 10), timeout / 1000)
         sleep(wartezeit)
