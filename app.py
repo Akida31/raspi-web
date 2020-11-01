@@ -76,10 +76,11 @@ def handle_connect():
 
 @socketio.on("disconnect")
 def handle_disconnect():
-    global verbundene_benutzer
+    global verbundene_benutzer, konfiguration
     verbundene_benutzer -= 1
     if verbundene_benutzer <= 0 and len(konfiguration["pins"]) > 0:
         GPIO.cleanup()
+        konfiguration = {"modus": None, "pins": {}}
 
 
 @socketio.on("get_all")
