@@ -41,6 +41,7 @@ def teste_eingabe(eingabe, *argumente):
     """
     teste die Eingabe des Benutzers.
     Überprüft, ob alle Argumente vorhanden sind und auch ein Modus gesetzt wurde
+    Wenn nicht, wird ein Fehler über *emit* zurückgegeben
     :param eingabe: dict - die Eingabe des Benutzers
     :param argumente: list[str] - die zu überprüfenden Argumente
     :return: boolean
