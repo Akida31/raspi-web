@@ -46,7 +46,7 @@ def teste_eingabe(eingabe, *argumente):
     :param argumente: list[str] - die zu überprüfenden Argumente
     :return: boolean
     """
-    if konfiguration["modus"]:
+    if konfiguration["modus"] is not None:
         for argument in argumente:
             if argument not in eingabe:
                 emit("fehler", {"text": f"Fehlendes Argument: '{argument}'"})
