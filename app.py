@@ -37,18 +37,18 @@ konfiguration = {"modus": None, "pins": {}}
 verbundene_benutzer = 0
 
 
-def teste_eingabe(eingabe, *argumente):
+def validiere_daten(daten, *argumente):
     """
-    teste die Eingabe des Benutzers.
+    validiere die Daten der Anfrage des Benutzers.
     Überprüft, ob alle Argumente vorhanden sind und auch ein Modus gesetzt wurde
     Wenn nicht, wird ein Fehler über *emit* zurückgegeben
-    :param eingabe: dict - die Eingabe des Benutzers
+    :param daten: dict - die Eingabe des Benutzers
     :param argumente: list[str] - die zu überprüfenden Argumente
     :return: boolean
     """
     if konfiguration["modus"] is not None:
         for argument in argumente:
-            if argument not in eingabe:
+            if argument not in daten:
                 emit("fehler", {"text": f"Fehlendes Argument: '{argument}'"})
                 return False
         return True
@@ -98,7 +98,7 @@ def handle_getmode(_daten):
 @socketio.on("output")
 def handle_output(data):
     global konfiguration
-    if teste_eingabe(data, "pin", "status"):
+    if validiere_daten(data, "pin", "status"):
         pin = data["pin"]
         status = data["status"]
         if (pin_konfiguration := konfiguration["pins"].get(pin)) and pin_konfiguration["richtung"] == GPIO.OUT:
@@ -126,7 +126,7 @@ def handle_setmode(daten):
 @socketio.on("setup")
 def handle_setup(daten):
     global konfiguration
-    if teste_eingabe(daten, "pin", "richtung"):
+    if validiere_daten(daten, "pin", "richtung"):
         richtung = daten["richtung"]
         pin = daten["pin"]
         if richtung not in [GPIO.IN, GPIO.OUT]:
