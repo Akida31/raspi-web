@@ -57,7 +57,7 @@ def teste_eingabe(eingabe, *argumente):
         return False
 
 
-def handle_input(pin):
+def input_callback(pin):
     global konfiguration
     status = GPIO.input(pin)
     socketio.emit("input", {"pin": pin, "status": status})
@@ -136,7 +136,7 @@ def handle_setup(daten):
         if pin in konfiguration["pins"] and konfiguration["pins"][pin]["richtung"] == GPIO.IN:
             GPIO.remove_event_detect(pin)
         if richtung == GPIO.IN:
-            GPIO.add_event_detect(pin, GPIO.BOTH, callback=handle_input)
+            GPIO.add_event_detect(pin, GPIO.BOTH, callback=input_callback)
         status = GPIO.input(pin)
         konfiguration["pins"][pin] = {"richtung": richtung, "status": status}
         socketio.emit("setup", {"pin": pin, "richtung": richtung, "status": status})
