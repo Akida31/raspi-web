@@ -39,7 +39,7 @@ socket.on('getmode', function (daten) {
         <button onclick="wechselModus('${BCM}');">BCM</button>
         <button onclick="wechselModus('${BOARD}');">BOARD</button>`;
     } else {
-        // Anfrage an der Server für die komplette Konfiguration
+        // Anfrage an der Server fuer die komplette Konfiguration
         socket.emit('get_all', {});
     }
 });

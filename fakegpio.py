@@ -48,7 +48,7 @@ class GPIO:
     def _callback(self, channel, callback):
         """Funktion, die fuer den event_callback genutzt wird
         Sie ruft die gewuenschte Funktion nach 5-10 Sekunden auf
-        :param channel: Der channel mit Änderung
+        :param channel: Der channel mit Aenderung
         :param callback: Die Callbackfunktion
         """
         sleep(randint(5, 10))

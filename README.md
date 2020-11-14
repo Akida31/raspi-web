@@ -1,6 +1,7 @@
 # Raspi-Web
-Gib dem Benutzer über eine Webseite die Möglichkeit, Ein- und Ausgänge auszulesen und zu verändern.
+Kontrolliere Deinen Raspberry Pi über das Internet
 
+Gib dem Benutzer über eine Webseite die Möglichkeit, Ein- und Ausgänge auszulesen und zu verändern.
 
 So können einfach die ersten Schritte zur Arbeit mit dem Raspberry Pi geschaffen werden, 
 da der Benutzer sich erstmal nicht um die Programmierung sondern nur den Aufbau kümmern muss.

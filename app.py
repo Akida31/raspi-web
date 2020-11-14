@@ -1,8 +1,7 @@
 """
     raspi-web
 
-    Gib dem Benutzer über eine Webseite die Moeglichkeit,
-    Ein- und Ausgaenge auszulesen und zu veraendern.
+    Kontrolliere Deinen Raspberry Pi ueber das Internet
 
     :author: Akida31
     :license: MIT
@@ -13,10 +12,10 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 
 # importiere GPIO
-# wenn GPIO Berechtigungen benötigt, brich ab
-# wenn GPIO nicht verfügbar ist (weil das Programm nicht auf einem Pi ausgeführt wird)
-#   nutze eigenes GPIO-Modul, welches zwar keine Funktionalität darstellt,
-#   aber das Programm so auf Syntax- und auch manche andere Fehler überprüft werden kann.
+# wenn GPIO Berechtigungen benoetigt, brich ab
+# wenn GPIO nicht verfuegbar ist (weil das Programm nicht auf einem Pi ausgefuehrt wird)
+#   nutze eigenes GPIO-Modul, welches zwar keine Funktionalitaet darstellt,
+#   aber das Programm so auf Syntax- und auch manche andere Fehler ueberprueft werden kann.
 try:
     from RPi import GPIO
 except RuntimeError:
@@ -40,10 +39,10 @@ verbundene_benutzer = 0
 def validiere_daten(daten, *argumente):
     """
     validiere die Daten der Anfrage des Benutzers.
-    Überprüft, ob alle Argumente vorhanden sind und auch ein Modus gesetzt wurde
-    Wenn nicht, wird ein Fehler über *emit* zurückgegeben
+    Ueberprueft, ob alle Argumente vorhanden sind und auch ein Modus gesetzt wurde
+    Wenn nicht, wird ein Fehler ueber *emit* zurueckgegeben
     :param daten: dict - die Eingabe des Benutzers
-    :param argumente: list[str] - die zu überprüfenden Argumente
+    :param argumente: list[str] - die zu ueberpruefenden Argumente
     :return: boolean
     """
     # ueberpruefe, ob schon der Modus konfiguriert wurde
@@ -126,7 +125,7 @@ def handle_output(data):
             pin_konfiguration["status"] = status
             socketio.emit("output", data)
         else:
-            emit("fehler", {"text": "Der GPIO Pin wurde nicht als Ausgang gewählt"})
+            emit("fehler", {"text": "Der GPIO Pin wurde nicht als Ausgang gewaehlt"})
 
 
 @socketio.on("setmode")
@@ -140,7 +139,7 @@ def handle_setmode(daten):
             konfiguration["modus"] = modus
             socketio.emit("setmode", daten)
         else:
-            emit("fehler", {"text": "Ungültiger Modus"})
+            emit("fehler", {"text": "Ungueltiger Modus"})
     else:
         emit("fehler", {"text": "Fehlendes Argument: 'modus'"})
 
@@ -154,7 +153,7 @@ def handle_setup(daten):
         pin = daten["pin"]
         # ueberpruefe, ob die Richtung zulaessig ist
         if richtung not in [GPIO.IN, GPIO.OUT]:
-            emit("fehler", {"text": "Ungültige Richtung"})
+            emit("fehler", {"text": "Ungueltige Richtung"})
             return
         GPIO.setup(pin, richtung)
         # loesche die Callback-Funktion fuer den Pin, wenn er als Eingang konfiguriert wurde,
