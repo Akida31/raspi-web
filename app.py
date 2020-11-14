@@ -1,8 +1,8 @@
 """
     raspi-web
 
-    Gib dem Benutzer über eine Webseite die Möglichkeit,
-    Ein- und Ausgänge auszulesen und zu verändern.
+    Gib dem Benutzer über eine Webseite die Moeglichkeit,
+    Ein- und Ausgaenge auszulesen und zu veraendern.
 
     :author: Akida31
     :license: MIT
@@ -46,7 +46,9 @@ def validiere_daten(daten, *argumente):
     :param argumente: list[str] - die zu überprüfenden Argumente
     :return: boolean
     """
-    if konfiguration["modus"] is not None:
+    # ueberpruefe, ob schon der Modus konfiguriert wurde
+    if konfiguration.get("modus") is not None:
+        # ueberpruefe fuer jedes Element der Argumente, ob dieses in den Daten enthalten ist
         for argument in argumente:
             if argument not in daten:
                 emit("fehler", {"text": f"Fehlendes Argument: '{argument}'"})
@@ -58,6 +60,11 @@ def validiere_daten(daten, *argumente):
 
 
 def input_callback(pin):
+    """
+    Benachrichtigt alle verbundenen Benutzer ueber eine Aenderung eines Eingangs
+    und aendert die Konfiguration.
+    Wird bei einer Aenderung eines Pins von GPIO aufgerufen
+    """
     global konfiguration
     status = GPIO.input(pin)
     socketio.emit("input", {"pin": pin, "status": status})
@@ -66,17 +73,25 @@ def input_callback(pin):
 
 @app.route("/")
 def index():
+    """zeige dem Benutzer die HTML-Datei aus dem Ordner `templates` an"""
     return render_template("index.html")
 
 
 @socketio.on("connect")
 def handle_connect():
+    """erhoehe die Anzahl der verbundenen Benutzer um 1"""
     global verbundene_benutzer
     verbundene_benutzer += 1
 
 
 @socketio.on("disconnect")
 def handle_disconnect():
+    """
+    verringere die Anzahl der verbundenen Benutzer um 1,
+    ueberpruefe, ob keine Benutzer mehr verbunden sind
+        und auch schon Pins konfiguriert wurden
+    und bereinige alles falls dies der Fall sein sollte
+    """
     global verbundene_benutzer, konfiguration
     verbundene_benutzer -= 1
     if verbundene_benutzer <= 0 and len(konfiguration["pins"]) > 0:
@@ -86,21 +101,26 @@ def handle_disconnect():
 
 @socketio.on("get_all")
 def handle_get(_daten):
+    """gib die gespeicherte Konfiguration zurueck"""
     emit("get_all", konfiguration)
 
 
 @socketio.on("getmode")
 def handle_getmode(_daten):
+    """gib den Modus zurueck"""
     modus = GPIO.getmode()
     emit("getmode", {"modus": modus})
 
 
 @socketio.on("output")
 def handle_output(data):
+    """aendere den Ausgang eines Pins"""
     global konfiguration
     if validiere_daten(data, "pin", "status"):
         pin = data["pin"]
         status = data["status"]
+        # aendere den Ausgang des Pins, falls dieser als Ausgang konfiguriert wurde
+        # und benachrichtige alle Benutzer
         if (pin_konfiguration := konfiguration["pins"].get(pin)) and pin_konfiguration["richtung"] == GPIO.OUT:
             GPIO.output(pin, status)
             pin_konfiguration["status"] = status
@@ -111,8 +131,10 @@ def handle_output(data):
 
 @socketio.on("setmode")
 def handle_setmode(daten):
+    """Setze den Modus"""
     global konfiguration
     if "modus" in daten:
+        # ueberpruefe, ob der Modus zulaessig ist und setze ihn eventuell
         if (modus := int(daten["modus"])) in [GPIO.BOARD, GPIO.BCM]:
             GPIO.setmode(modus)
             konfiguration["modus"] = modus
@@ -120,28 +142,37 @@ def handle_setmode(daten):
         else:
             emit("fehler", {"text": "Ungültiger Modus"})
     else:
-        emit("fehler", {"text": f"Fehlendes Argument: 'modus'"})
+        emit("fehler", {"text": "Fehlendes Argument: 'modus'"})
 
 
 @socketio.on("setup")
 def handle_setup(daten):
+    """konfiguriere einen Pin"""
     global konfiguration
     if validiere_daten(daten, "pin", "richtung"):
         richtung = daten["richtung"]
         pin = daten["pin"]
+        # ueberpruefe, ob die Richtung zulaessig ist
         if richtung not in [GPIO.IN, GPIO.OUT]:
             emit("fehler", {"text": "Ungültige Richtung"})
             return
         GPIO.setup(pin, richtung)
+        # loesche die Callback-Funktion fuer den Pin, wenn er als Eingang konfiguriert wurde,
+        # da eine Callback-Funktion nicht zweimal fuer einen Pin hinzugefuegt werden darf
         if pin in konfiguration["pins"] and konfiguration["pins"][pin]["richtung"] == GPIO.IN:
             GPIO.remove_event_detect(pin)
         if richtung == GPIO.IN:
+            # setze die Callback-Funktion, sodass die Benutzer benachrichtigt werden,
+            # falls sich der Status des Pins aendert
             GPIO.add_event_detect(pin, GPIO.BOTH, callback=input_callback)
+        # sende allen Benutzern die Konfiguration des Pins
         status = GPIO.input(pin)
         konfiguration["pins"][pin] = {"richtung": richtung, "status": status}
         socketio.emit("setup", {"pin": pin, "richtung": richtung, "status": status})
 
 
 if __name__ == "__main__":
+    # starte den Server und erlaube auch Verbindungen von anderen Computern
     socketio.run(app, host="0.0.0.0")
+    # nach dem Beenden des Servers fuere eine Bereinigung durch
     GPIO.cleanup()

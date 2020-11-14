@@ -99,7 +99,8 @@ class GPIO:
             edge = "both"
         else:
             raise ValueError("The edge must be set to RISING, FALLING or BOTH")
-        print(f"event detect fuer channel {channel} fuer {edge} und bouncetime {bouncetime}ms")
+        print(f"event detect fuer channel {channel} fuer {edge} und bouncetime {bouncetime} ms")
+        self.events.append(channel)
         if callback:
             self.add_event_callback(channel, callback)
 
@@ -182,13 +183,13 @@ class GPIO:
         [initial]      - Initial value for an output channel"""
         self._check_mode()
         if direction == GPIO.OUT:
-            direction = "OUT"
+            direction_text = "OUT"
         elif direction == GPIO.IN:
-            direction = "IN"
+            direction_text = "IN"
         else:
             raise ValueError("An invalid direction was passed to setup()")
         self.channels[channel] = direction
-        print(f"setup channel {channel} auf {direction} mit pull_up_down {pull_up_down} und initial {initial}")
+        print(f"setup channel {channel} auf {direction_text} mit pull_up_down {pull_up_down} und initial {initial}")
 
     def setwarnings(self, on):
         """Enable or disable warning messages"""
