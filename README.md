@@ -36,10 +36,12 @@ python3.9 -m pip install RPi.GPIO
 
 # Screenshots
 Auswahl des Modus:
+
 ![Screenshot 1](img/img1.png)
 
 
 Beispielnutzung:
+
 ![Screenshot 2](img/img2.png)
 
 
