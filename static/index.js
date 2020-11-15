@@ -1,7 +1,7 @@
-// Erstellung einer Verbindung zum Backend
+// erstelle eine Verbindung zum Backend
 const socket = io();
 
-// Definierung der Konstanten, genauso wie im Backend
+// definiere die Konstanten genauso wie im Backend
 // `const` steht fuer Konstanten
 // Konstanten werden normalerweise komplett gross geschrieben (upper case)
 const IN = 1;
@@ -11,12 +11,12 @@ const BOARD = 10;
 
 // fuer das `fehler`-Event wird eine Funktion hinzugefuegt und die Daten des Events uebergeben
 socket.on('fehler', function (daten) {
-    // zeige dem Benutzer als Nachricht den extrahierten Text
+    // zeige dem Benutzer als Nachricht den extrahierten Text an
     alert(daten["text"]);
 });
 
 socket.on('get_all', function (daten) {
-    // zuerst wird der Modus gesetzt
+    // setze den Modus fuer den Benutzer
     setzeModus(daten["modus"]);
     let pins = daten['pins'];
     // dieser Syntax ist wie eine For-Schleife in Python
@@ -30,11 +30,10 @@ socket.on('getmode', function (daten) {
     // extrahiere den Modus aus den daten
     // daten ist vom Typ `Object`, das ist aequivalent zu dictionaries in Python
     let modus = daten["modus"];
-    // ueberpruefe, ob der Modus schon gesetzt war
+    // ueberpruefe, ob der Modus noch nicht gesetzt war
     if (modus === null) {
         // erstelle eine Oberflaeche zur Auswahl des Modus
         // dafuer wird der Inhalt des Elementes mit der id `modus` geaendert
-        // zur besseren Lesbarkeit werden die Konstanten `BCM` und `BOARD` fuer die Buttons eingesetzt
         document.getElementById("modus").innerHTML = `<p>Welcher Modus soll genutzt werden?</p>
         <button onclick="wechselModus('${BCM}');">BCM</button>
         <button onclick="wechselModus('${BOARD}');">BOARD</button>`;
@@ -45,11 +44,13 @@ socket.on('getmode', function (daten) {
 });
 
 socket.on('input', function (daten) {
+    // zeige die Aenderung des Pins an
     renderPin(daten["pin"], IN, daten["status"]);
 });
 
 
 socket.on('output', function (daten) {
+    // zeige die Aenderung des Pins an
     renderPin(daten["pin"], OUT, daten["status"]);
 });
 
@@ -59,12 +60,13 @@ socket.on('setmode', function (daten) {
 });
 
 socket.on('setup', function (daten) {
-    // zeige den Pin, der konfiguriert wurde, an
+    // zeige den Pin an, der konfiguriert wurde
     renderPin(daten["pin"], daten["richtung"], daten["status"]);
 });
 
 
 function setzeModus(modus) {
+    // fuer den Benutzer wird nun der Modus zu einem verstaendlichen Text umgewandelt
     // damit sowohl der String '11' als auch die Zahl 11 als BCM erkannt wird,
     // wird zur ueberpruefung ein == benutzt
     if (modus == '11') {
@@ -79,23 +81,25 @@ function setzeModus(modus) {
 }
 
 function wechselRichtung(pin, richtung) {
+    // sende eine Richtungsaenderung (setup) an den Server
     socket.emit('setup', {pin: pin, richtung: richtung});
 }
 
 function wechselStatus(pin, status) {
+    // sende eine Statusaenderung (output) an den Server
     socket.emit('output', {pin: pin, status: status});
 }
 
 function wechselModus(modus) {
-    // sende an das Backend das `setmode` Event und uebergebe den Modus
+    // sende an den Server eine Aenderung des Modus (setmode)
     socket.emit('setmode', {modus: modus});
 }
 
 function neuerPin(pin) {
-    // fuege einen neuen Container fuer den pin zu der Oberflaeche dazu
-    // dabei werden Bilder (im svg-Format) zur besseren Gestaltung verwendet
+    // fuege einen neuen Container fuer den Pin zu der Oberflaeche dazu
+    // dabei werden Bilder (im SVG-Format) zur besseren Gestaltung verwendet
     // der Pin wird aber nur fuer den einen Benutzer hinzugefuegt und erst beim setup,
-    // also wechselRichtung im Backend initialisiert
+    // also durch die Funktion wechselRichtung, im Backend initialisiert
     let container = document.getElementById('pins');
     container.innerHTML += `<div id="pin${pin}" class="pin">
             <p>Pin ${pin}</p>
@@ -107,7 +111,7 @@ function neuerPin(pin) {
 function pinHinzufuegen() {
     // erstelle eine Variable, die auf das HTML-Element mit der id `pin-nummer` zeigt
     let pin = document.getElementById('pin-nummer');
-    // auslesen des Wertes vom Eingabefeld
+    // lies den Wert des Eingabefeldes aus
     let nummer = pin.value;
     // Da fuer jeden Pin eine id `pin` + nummer erstellt wird,
     // wird nun getestet, ob ein Element mit der id schon existiert
@@ -117,7 +121,7 @@ function pinHinzufuegen() {
         neuerPin(nummer);
     }
     // Der Wert des Eingabefeldes wird nun zur besseren Bedienung um 1 erhoeht,
-    // da haeufig mehrere Pins hintereinander genutzt werden
+    // da haeufig mehrere aufeinanderfolgende Pins genutzt werden
     pin.value++;
 }
 
@@ -135,6 +139,7 @@ function renderPin(pin, richtung, status) {
     let buttonInClass, buttonOutClass, buttonInDisable, buttonOutDisable = "";
     let statusIcon, andererStatus;
     let statusHtml;
+
     // setze ein bestimmtes Icon fuer die Anzeige und merke den anderen Status,
     // um ihn spaeter wechseln zu koennen
     if (status === 0) {
@@ -145,10 +150,10 @@ function renderPin(pin, richtung, status) {
         andererStatus = 0;
     }
 
-    // Erstellung der spezifischen Anzeige fuer Input und Output
+    // erstelle die spezifische Anzeige fuer Input und Output
     // buttonInClass und buttonOutClass sind fuer das Hinzufuegen des Styles wichtig
     // es wird auch die derzeitige Richtung `disabled`, das heisst unbenutzbar gemacht,
-    // damit nicht ausversehen viele Events ueber ein erneutes Setup an den Server gesendet werden
+    // damit nicht ausversehen viele Events fuer ein wiederholtes setup an den Server gesendet werden
     if (richtung === IN) {
         buttonInClass = "button-disabled";
         buttonInDisable = "disabled";

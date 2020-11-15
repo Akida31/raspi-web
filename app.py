@@ -13,32 +13,32 @@ from flask_socketio import SocketIO, emit
 
 # importiere GPIO
 # wenn GPIO Berechtigungen benoetigt, brich ab
-# wenn GPIO nicht verfuegbar ist (weil das Programm nicht auf einem Pi ausgefuehrt wird)
-#   nutze eigenes GPIO-Modul, welches zwar keine Funktionalitaet darstellt,
-#   aber das Programm so auf Syntax- und auch manche andere Fehler ueberprueft werden kann.
+# wenn GPIO nicht verfuegbar ist (weil das Programm nicht auf einem Pi ausgefuehrt wird),
+#   nutze FakeGPIO, welches das Programm auf Syntax- und auch manche andere Fehler ueberpruefen kann.
 try:
     from RPi import GPIO
-except RuntimeError:
+except RuntimeError:  # dieser Fehler wird bei fehlenden Berechtigungen geworfen
     print("Keine Berechtigungen RPi.GPIO zu importieren. Starte das Programm mit 'sudo'")
     exit(1)
 except ModuleNotFoundError:
     print("Modul RPi.GPIO nicht gefunden. \nNutze eigenes Modul...")
     from fakegpio import GPIO
-
+    # erstelle die GPIO Instanz, danach kann FakeGPIO wie das normale GPIO benutzt werden
     GPIO = GPIO()
 
-# erstelle die App und richte socketio ein
+# erstelle die App und richte SocketIO ein
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 # erstelle die Konfiguration
 konfiguration = {"modus": None, "pins": {}}
+# wenn der Server startet, kann noch kein Benutzer verbunden sein
 verbundene_benutzer = 0
 
 
 def validiere_daten(daten, *argumente):
     """
-    validiere die Daten der Anfrage des Benutzers.
+    validiere die Daten aus der Anfrage des Benutzers.
     Ueberprueft, ob alle Argumente vorhanden sind und auch ein Modus gesetzt wurde
     Wenn nicht, wird ein Fehler ueber *emit* zurueckgegeben
     :param daten: dict - die Eingabe des Benutzers
@@ -47,13 +47,15 @@ def validiere_daten(daten, *argumente):
     """
     # ueberpruefe, ob schon der Modus konfiguriert wurde
     if konfiguration.get("modus") is not None:
-        # ueberpruefe fuer jedes Element der Argumente, ob dieses in den Daten enthalten ist
+        # ueberpruefe fuer jedes Argument, ob dieses in den Daten enthalten ist
         for argument in argumente:
             if argument not in daten:
+                # wenn dies nicht der Fall ist, gib einen Fehler an den Benutzer zurueck
                 emit("fehler", {"text": f"Fehlendes Argument: '{argument}'"})
                 return False
         return True
     else:
+        # wenn noch kein Modus gesetzt wurde, wird ebenfalls ein Fehler an den Benutzer gesendet
         emit("fehler", {"text": "Setze zuerst den Modus"})
         return False
 
@@ -62,7 +64,7 @@ def input_callback(pin):
     """
     Benachrichtigt alle verbundenen Benutzer ueber eine Aenderung eines Eingangs
     und aendert die Konfiguration.
-    Wird bei einer Aenderung eines Pins von GPIO aufgerufen
+    Wird bei einer Aenderung eines Pins durch GPIO aufgerufen
     """
     global konfiguration
     status = GPIO.input(pin)
@@ -87,7 +89,7 @@ def handle_connect():
 def handle_disconnect():
     """
     verringere die Anzahl der verbundenen Benutzer um 1,
-    ueberpruefe, ob keine Benutzer mehr verbunden sind
+    ueberpruefe, ob keine Benutzer mehr verbunden ist
         und auch schon Pins konfiguriert wurden
     und bereinige alles falls dies der Fall sein sollte
     """
@@ -95,12 +97,13 @@ def handle_disconnect():
     verbundene_benutzer -= 1
     if verbundene_benutzer <= 0 and len(konfiguration["pins"]) > 0:
         GPIO.cleanup()
+        # erstelle die Konfiguration genauso wie beim Start der Servers
         konfiguration = {"modus": None, "pins": {}}
 
 
 @socketio.on("get_all")
 def handle_get(_daten):
-    """gib die gespeicherte Konfiguration zurueck"""
+    """gib die gesamte gespeicherte Konfiguration zurueck"""
     emit("get_all", konfiguration)
 
 
@@ -118,7 +121,7 @@ def handle_output(data):
     if validiere_daten(data, "pin", "status"):
         pin = data["pin"]
         status = data["status"]
-        # aendere den Ausgang des Pins, falls dieser als Ausgang konfiguriert wurde
+        # aendere den Status des Pins, falls dieser als Ausgang konfiguriert wurde
         # und benachrichtige alle Benutzer
         if (pin_konfiguration := konfiguration["pins"].get(pin)) and pin_konfiguration["richtung"] == GPIO.OUT:
             GPIO.output(pin, status)
@@ -130,8 +133,9 @@ def handle_output(data):
 
 @socketio.on("setmode")
 def handle_setmode(daten):
-    """Setze den Modus"""
+    """setze den Modus"""
     global konfiguration
+    # ueberpruefe, ob ueberhaupt ein Modus mitgesendet wurde
     if "modus" in daten:
         # ueberpruefe, ob der Modus zulaessig ist und setze ihn eventuell
         if (modus := int(daten["modus"])) in [GPIO.BOARD, GPIO.BCM]:
