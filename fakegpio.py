@@ -57,10 +57,12 @@ class GPIO:
         """
         # warte eine zufaellige Zeit
         sleep(randint(5, 10))
-        # falls der Channel noch nicht entfernt wurde
+        # falls das Programm noch laueft,
+        # der channel noch nicht gecleart wurde
+        # und der Channel noch nicht entfernt wurde
         # (zum Beispiel durch einen Wechsel des Channels zu einem Ausgang)
         # rufe die Callbackfunktion auf
-        if channel in self.events:
+        if self.mode is not None and channel in self.channels and channel in self.events:
             callback(channel)
 
     def _check_mode(self):

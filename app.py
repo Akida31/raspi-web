@@ -7,7 +7,10 @@
     :license: MIT
 """
 
-# importiere die passenden Module
+# importiere Json, damit Strings zu Dictionaries umgewandelt werden koennen
+import json
+
+# importiere die passenden Flask Module
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 
@@ -23,11 +26,13 @@ except RuntimeError:  # dieser Fehler wird bei fehlenden Berechtigungen geworfen
 except ModuleNotFoundError:
     print("Modul RPi.GPIO nicht gefunden. \nNutze eigenes Modul...")
     from fakegpio import GPIO
+
     # erstelle die GPIO Instanz, danach kann FakeGPIO wie das normale GPIO benutzt werden
     GPIO = GPIO()
 
 # erstelle die App und richte SocketIO ein
-app = Flask(__name__)
+# der static_url_path gibt an, wo die Dateien aus dem static Ordner zu finden sind
+app = Flask(__name__, static_url_path='')
 socketio = SocketIO(app)
 
 # erstelle die Konfiguration
@@ -110,23 +115,26 @@ def handle_get(_daten):
 @socketio.on("getmode")
 def handle_getmode(_daten):
     """gib den Modus zurueck"""
-    modus = GPIO.getmode()
+    modus = konfiguration.get("modus")
     emit("getmode", {"modus": modus})
 
 
 @socketio.on("output")
-def handle_output(data):
+def handle_output(daten):
     """aendere den Ausgang eines Pins"""
+    # falls die Daten als String ankommen, konvertiere sie in ein Dictionary
+    if type(daten) == str:
+        daten = json.loads(daten)
     global konfiguration
-    if validiere_daten(data, "pin", "status"):
-        pin = data["pin"]
-        status = data["status"]
+    if validiere_daten(daten, "pin", "status"):
+        pin = daten["pin"]
+        status = daten["status"]
         # aendere den Status des Pins, falls dieser als Ausgang konfiguriert wurde
         # und benachrichtige alle Benutzer
         if (pin_konfiguration := konfiguration["pins"].get(pin)) and pin_konfiguration["richtung"] == GPIO.OUT:
             GPIO.output(pin, status)
             pin_konfiguration["status"] = status
-            socketio.emit("output", data)
+            socketio.emit("output", daten)
         else:
             emit("fehler", {"text": "Der GPIO Pin wurde nicht als Ausgang gewaehlt"})
 
@@ -135,6 +143,8 @@ def handle_output(data):
 def handle_setmode(daten):
     """setze den Modus"""
     global konfiguration
+    if type(daten) == str:
+        daten = json.loads(daten)
     # ueberpruefe, ob ueberhaupt ein Modus mitgesendet wurde
     if "modus" in daten:
         # ueberpruefe, ob der Modus zulaessig ist und setze ihn eventuell
@@ -152,6 +162,8 @@ def handle_setmode(daten):
 def handle_setup(daten):
     """konfiguriere einen Pin"""
     global konfiguration
+    if type(daten) == str:
+        daten = json.loads(daten)
     if validiere_daten(daten, "pin", "richtung"):
         richtung = daten["richtung"]
         pin = daten["pin"]

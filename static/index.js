@@ -103,8 +103,8 @@ function neuerPin(pin) {
     let container = document.getElementById('pins');
     container.innerHTML += `<div id="pin${pin}" class="pin">
             <p>Pin ${pin}</p>
-            <button class="input-button" onclick="wechselRichtung(${pin}, ${IN})"><img src="static/input.svg" alt=""/> Eingang</button>
-            <button class="output-button" onclick="wechselRichtung(${pin}, ${OUT})"><img src="static/output.svg" alt=""/ class="image">Ausgang</button>
+            <button class="input-button" onclick="wechselRichtung(${pin}, ${IN})"><img src="input.svg" alt=""/> Eingang</button>
+            <button class="output-button" onclick="wechselRichtung(${pin}, ${OUT})"><img src="output.svg" alt=""/ class="image">Ausgang</button>
         </div>`;
 }
 
@@ -143,10 +143,10 @@ function renderPin(pin, richtung, status) {
     // setze ein bestimmtes Icon fuer die Anzeige und merke den anderen Status,
     // um ihn spaeter wechseln zu koennen
     if (status === 0) {
-        statusIcon = '<img src="static/lamp-off.svg" alt="aus" class="status-image"/>';
+        statusIcon = '<img src="lamp-off.svg" alt="aus" class="status-image"/>';
         andererStatus = 1;
     } else {
-        statusIcon = '<img src="static/lamp-on.svg" alt="an" class="status-image"/>';
+        statusIcon = '<img src="lamp-on.svg" alt="an" class="status-image"/>';
         andererStatus = 0;
     }
 
@@ -166,10 +166,10 @@ function renderPin(pin, richtung, status) {
     // Erstelle nun das Grundgeruest fuer jeden Pin
     text += `<div class="status"><p>Status:</p>${statusHtml}</div>`;
     text += `<button class="input-button ${buttonInClass}" onclick="wechselRichtung(${pin}, ${IN})" ${buttonInDisable}>
-                <img src="static/input.svg" alt=""/> Eingang</button>
+                <img src="input.svg" alt="" class="image"/> Eingang</button>
             <button class="output-button ${buttonOutClass}" 
                 onclick="wechselRichtung(${pin}, ${OUT})" ${buttonOutDisable}>
-                <img src="static/output.svg" alt=""/ class="image">Ausgang</button>`;
+                <img src="output.svg" alt="" class="image"/>Ausgang</button>`;
     // setze den Inhalt des Pins
     // nun ist klar, dass der Pin auch existiert (da er sonst oben erstellt wurde)
     // und somit kann `getElementById` keinen Fehler werfen
